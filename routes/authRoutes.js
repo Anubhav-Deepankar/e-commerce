@@ -3,79 +3,52 @@ const router = express.Router();
 const User = require("../models/User");
 const passport = require("passport");
 
+// ===== Register Form =====
+router.get("/register", (req, res) => {
+  res.render("auth/Signup");
+});
 
+// ===== Register User =====
+router.post("/register", async (req, res, next) => {
+  try {
+    const { username, password, email } = req.body;
+    const user = new User({ username, email });
+    const newUser = await User.register(user, password); // can throw error
+    req.flash("success", `${username.toUpperCase()}, registered successfully!`);
+    res.redirect("/login");
+  } catch (err) {
+    console.error("Signup error:", err);
+    req.flash("error", err.message || "Signup failed. Try again!");
+    res.redirect("/register");
+  }
+});
 
-router.get("/register", (req,res)=>{
+// ===== Login Form =====
+router.get("/login", (req, res) => {
+  res.render("auth/Login");
+});
 
-    res.render("auth/Signup")
+// ===== Login User =====
+router.post(
+  "/login",
+  passport.authenticate("local", {
+    failureRedirect: "/login",
+    failureFlash: true,
+    failureMessage: true,
+  }),
+  (req, res) => {
+    req.flash("success", `Welcome back, ${req.user.username.toUpperCase()}!`);
+    res.redirect("/products");
+  }
+);
 
-})
-
-// router.get("/testUser", async(req,res)=>{
-
-//     const user = new User({username : " naman" , email : "naman@gmail.com" })
-
-//        const newUser = await User.register(user , "12345");
-
-//        res.send(newUser)
-
-
-// })
-
-// Register a new User
-
-router.post("/register", async(req,res)=>{
-
-    const {username, password, email } = req.body;
-
-    const user = new User({username , email});
-
-    const newUser = await User.register(user, password);
-
-    req.flash("success", `${username.toUpperCase()}, registered Successfully!`)
-
-    res.redirect("/login")
-})
-
-
-router.get("/login", (req,res)=>{
-
-    res.render("auth/Login")
-})
-
-router.post("/login", 
-
-    passport.authenticate("local", {
-      
-        failureRedirect : "/login",
-        failureFlash : true ,
-        failureMessage:true
-  
-    }),
-    function(req,res){
-
-
-        req.flash("success", `Welcome back, ${req.user.username.toUpperCase()}!`);
-
-        res.redirect("/products")
-    }
-)
-
-router.get("/logout", (req,res)=>{
-
-
-    req.logOut((err)=>{
-
-        if(err) {return next(err)};
-
-        req.flash("success", "Goodbye, see you again!");
-        res.redirect("/login")
-    })
-})
-
-
-
-
-
+// ===== Logout =====
+router.get("/logout", (req, res, next) => {
+  req.logout(function (err) {
+    if (err) return next(err);
+    req.flash("success", "Goodbye, see you again!");
+    res.redirect("/login");
+  });
+});
 
 module.exports = router;
