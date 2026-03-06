@@ -1,4 +1,4 @@
-require("dotenv").config(); // Load .env variables
+require("dotenv").config(); // Load environment variables
 const express = require("express");
 const app = express();
 const path = require("path");
@@ -12,50 +12,41 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/User");
 
-// Use PORT from environment or fallback
+// Use PORT from environment (Render) or fallback
 const port = process.env.PORT || 5000;
 
-// MongoDB Atlas connection
+// ===== MongoDB Atlas Connection =====
 mongoose
   .connect(process.env.DB_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 30000, // 30s timeout
+    serverSelectionTimeoutMS: 30000, // 30s timeout for Atlas
   })
-  .then(() => {
-    console.log("MongoDB Atlas connected successfully".blue);
+  .then(() => console.log("MongoDB Atlas connected successfully".blue))
+  .catch((err) => console.log("MongoDB connection error:", err));
 
-    // Start the server only after DB connection
-    app.listen(port, () =>
-      console.log(`Server listening at port ${port}`.red)
-    );
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-    process.exit(1); // Exit if DB connection fails
-  });
-
-// Session config
+// ===== Session Configuration =====
 const sessionConfig = {
   secret: process.env.SECRET || "fallbackSecret",
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false, // prevent empty sessions
   cookie: {
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // only HTTPS in prod
+    secure: process.env.NODE_ENV === "production", // HTTPS only in prod
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   },
 };
 
-// Passport setup
+// ===== Passport Setup =====
 passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-// EJS & Middleware
+// ===== Middleware =====
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
@@ -64,7 +55,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
 
-// Flash & currentUser middleware
+// ===== Flash Messages & Current User =====
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
@@ -72,7 +63,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
+// ===== Routes =====
 const productRoutes = require("./routes/productRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -83,12 +74,10 @@ app.use(reviewRoutes);
 app.use(authRoutes);
 app.use(cartRoutes);
 
-// Homepage
+// ===== Home Page =====
 app.get("/", (req, res) => {
   res.render("homepage");
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).render("404"); // create 404.ejs if you want
-});
+// ===== Start Server =====
+app.listen(port, () => console.log(`Server listening at ${port}`.red));
