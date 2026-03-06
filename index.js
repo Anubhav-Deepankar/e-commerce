@@ -1,3 +1,4 @@
+require("dotenv").config(); // Load .env variables
 const express = require("express");
 const app = express();
 const path = require("path");
@@ -10,32 +11,42 @@ const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/User");
+
+// Use PORT from environment for Render
 const port = process.env.PORT || 5000;
 
+// Connect to MongoDB Atlas
 mongoose
-  .connect("mongodb://127.0.0.1:27017/ecomm-careerbootcamp")
-  .then(() => console.log("db connected sucessfully".blue))
-  .catch((err) => console.log(err));
+  .connect(process.env.DB_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 30000, // 30s timeout
+  })
+  .then(() => console.log("MongoDB Atlas connected successfully".blue))
+  .catch((err) => console.log("MongoDB connection error:", err));
 
+// Session config
 const sessionConfig = {
-  secret: "weneedagoodsecret",
+  secret: process.env.SECRET || "fallbackSecret",
   resave: false,
   saveUninitialized: true,
   cookie: {
-    expire: Date.now() + 7 * 24 * 60 * 60 * 1000,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   },
 };
 
+// Passport setup
 passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-//Routes
+// Routes
 const productRoutes = require("./routes/productRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const authRoutes = require("./routes/authRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 
+// EJS & Middleware
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -55,7 +66,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// routes middleware
+// Routes middleware
 app.use("/products", productRoutes);
 app.use(reviewRoutes);
 app.use(authRoutes);
