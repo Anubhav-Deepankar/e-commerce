@@ -1,8 +1,16 @@
 <% layout('./layout/boilerplate') -%>
 
 <div class="border p-3 mx-auto w-50">
-
     <h1>Sign Up</h1>
+
+    <!-- Flash messages -->
+    <% if (error) { %>
+        <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+    <% if (success) { %>
+        <div class="alert alert-success"><%= success %></div>
+    <% } %>
+
     <form action="/register" method="post">
         <div class="mb-3">
             <label class="form-label" for="username">Username</label>
@@ -16,7 +24,7 @@
             <label class="form-label" for="password">Password</label>
             <input class="form-control" type="password" name="password" id="password">
         </div>
-        <p>Already have an account ? <a href="/login">Login</a></p>
+        <p>Already have an account? <a href="/login">Login</a></p>
         <button type="submit" class="btn btn-sm btn-success">Sign Up</button>
     </form>
-</div
+</div>
